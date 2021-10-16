@@ -1,5 +1,5 @@
 # Connect to gdb remote server
-target remote :3333
+target extended-remote :3333
 
 # Load will flash the code
 load
