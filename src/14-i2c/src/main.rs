@@ -1,9 +1,10 @@
-//#![deny(unsafe_code)]
+#![deny(unsafe_code)]
 #![no_main]
 #![no_std]
 
 #[allow(unused_imports)]
 use aux14::{entry, iprint, iprintln, prelude::*};
+use core::convert::TryInto;
 
 // Slave address
 const MAGNETOMETER: u16 = 0b0011_1100;
@@ -53,14 +54,16 @@ fn main() -> ! {
             w.start().start()
         });
 
-        let mut buffer = [0i16; 3];
-        let buffer_u8 = unsafe { buffer.align_to_mut::<u8>().1 };
-        for byte in buffer_u8 {
+        let mut buffer = [0u8; 6];
+        for byte in &mut buffer {
             while i2c1.isr.read().rxne().bit_is_clear() {}
             *byte = i2c1.rxdr.read().rxdata().bits()
         }
 
-        iprintln!(&mut itm.stim[0], "{:?}",buffer);
+        let x = i16::from_le_bytes(buffer[0..2].try_into().unwrap());
+        let y = i16::from_le_bytes(buffer[2..4].try_into().unwrap());
+        let z = i16::from_le_bytes(buffer[4..6].try_into().unwrap());
+        iprintln!(&mut itm.stim[0], "{:?}", (x, y, z));
 
         delay.delay_ms(1_000_u16);
     }
